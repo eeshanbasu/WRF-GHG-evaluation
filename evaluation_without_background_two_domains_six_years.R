@@ -266,7 +266,24 @@ for(j in 1:length(sheets)){
   
 }
 
-write.xlsx2(finalDf, 
-            file = "E:/Eeshan/evaluation/results/results_without_background_yearly_d01_d02.xlsx", 
-            sheetName="Average_6", 
-            append=TRUE)
+# Define the file path
+file_path <- "E:/Eeshan/evaluation/results/results_without_background_yearly_d01_d02.xlsx"
+
+# Load the existing workbook or create a new one if it doesn't exist
+if (file.exists(file_path)) {
+  wb <- loadWorkbook(file_path)
+} else {
+  wb <- createWorkbook()
+}
+
+# Check if the sheet exists, and delete it if it does
+if ("Average" %in% getSheetNames(file_path)) {
+  removeWorksheet(wb, "Average")
+}
+
+# Add the sheet and write the data
+addWorksheet(wb, "Average")
+writeData(wb, "Average", finalDf)
+
+# Save the workbook
+saveWorkbook(wb, file_path, overwrite = TRUE)

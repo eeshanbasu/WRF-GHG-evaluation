@@ -272,7 +272,24 @@ finalDf$`NME(%)`<- as.numeric(finalDf$`NME(%)`)
 finalDf$MAE<- as.numeric(finalDf$MAE)
 finalDf$`RMSE(ppm)`<- as.numeric(finalDf$`RMSE(ppm)`)
 
-write.xlsx2(finalDf, 
-            file = "E:/Eeshan/evaluation/results/results_SON_d01_d02.xlsx", 
-            sheetName= "Average", 
-            append = TRUE)
+# Define the file path
+file_path <- "E:/Eeshan/evaluation/results/results_SON_d01_d02.xlsx"
+
+# Load the existing workbook or create a new one if it doesn't exist
+if (file.exists(file_path)) {
+  wb <- loadWorkbook(file_path)
+} else {
+  wb <- createWorkbook()
+}
+
+# Check if the sheet exists, and delete it if it does
+if ("Average" %in% getSheetNames(file_path)) {
+  removeWorksheet(wb, "Average")
+}
+
+# Add the sheet and write the data
+addWorksheet(wb, "Average")
+writeData(wb, "Average", finalDf)
+
+# Save the workbook
+saveWorkbook(wb, file_path, overwrite = TRUE)

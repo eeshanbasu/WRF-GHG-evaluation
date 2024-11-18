@@ -20,40 +20,21 @@ for(j in 1:length(sheets)){
                    col_types = c('date','numeric','numeric','numeric','numeric','numeric'))
   
   # reading in data for specific months
-  df_MAM_initial_1 <- df %>% 
-    filter(df$Time > as.POSIXct("2012-02-29 23:00:00", tz="UTC") & df$Time < as.POSIXct("2012-06-01 00:00:00", tz="UTC"))
-  # reading in data for specific months
-  df_MAM_initial_2 <- df %>% 
-    filter(df$Time > as.POSIXct("2013-02-28 23:00:00", tz="UTC") & df$Time < as.POSIXct("2013-06-01 00:00:00", tz="UTC"))
-  # reading in data for specific months
-  df_MAM_initial_3 <- df %>% 
-    filter(df$Time > as.POSIXct("2014-02-28 23:00:00", tz="UTC") & df$Time < as.POSIXct("2014-06-01 00:00:00", tz="UTC"))
-  # reading in data for specific months
-  df_MAM_initial_4 <- df %>% 
-    filter(df$Time > as.POSIXct("2015-02-28 23:00:00", tz="UTC") & df$Time < as.POSIXct("2015-06-01 00:00:00", tz="UTC"))
-  # reading in data for specific months
-  df_MAM_initial_5 <- df %>% 
-    filter(df$Time > as.POSIXct("2016-02-29 23:00:00", tz="UTC") & df$Time < as.POSIXct("2016-06-01 00:00:00", tz="UTC"))
-  # reading in data for specific months
-  df_MAM_initial_6 <- df %>% 
-    filter(df$Time > as.POSIXct("2017-02-28 23:00:00", tz="UTC") & df$Time < as.POSIXct("2017-06-01 00:00:00", tz="UTC"))
+  df_Annual <- df %>% 
+    filter(df$Time > as.POSIXct("2015-12-31 23:00:00", tz="UTC") & df$Time < as.POSIXct("2017-01-01 00:00:00", tz="UTC"))
   
-  df_MAM <- rbind(df_MAM_initial_1,df_MAM_initial_2,df_MAM_initial_3,
-                  df_MAM_initial_4,df_MAM_initial_5,df_MAM_initial_6)
-  
-  df_MAM <- df_MAM[df_MAM$EDGAR >= 100, ] # drop values less than 100
-  # Drop NA values specifically for column 'A'
-  df_MAM <- df_MAM[!is.na(df_MAM$Obs), ]
-  df_MAM <- df_MAM[!is.na(df_MAM$ODIAC), ]
+  df_Annual <- df_Annual %>%
+    filter(!is.na(Obs), !is.na(EDGAR), !is.na(ODIAC), !is.na(VULCAN))
   
   # creating an empty dataframe
   statDf <- data.frame()
   
-  columns <- colnames(df_MAM)
-  obs <- df_MAM[,2]
-  obs <- dplyr::pull(df_MAM, 2) #changing it to numeric
-  EDGAR <- df_MAM[,3]
-  EDGAR <- dplyr::pull(df_MAM,3)
+  columns <- colnames(df_Annual)
+  obs <- df_Annual[,2]
+  obs <- dplyr::pull(df_Annual, 2) #changing it to numeric
+  
+  EDGAR <- df_Annual[,3]
+  EDGAR <- dplyr::pull(df_Annual,3)
   
   statsReady <- modeval(measured = obs,
                         calculated = EDGAR,
@@ -61,7 +42,7 @@ for(j in 1:length(sheets)){
                                "intercept","EF","SD","CRM","MPE","AC","ACu","ACs"))
   i <- 1
   
-  statDf[i,1] <- paste(sheets[j],'_MAM')
+  statDf[i,1] <- paste(sheets[j])
   statDf[i,2] <- "EDGAR"
   statDf[i,3] <- statsReady[[1]] #N
   statDf[i,4] <- format(mean(obs), nsmall = 2, digits = 2)
@@ -77,12 +58,8 @@ for(j in 1:length(sheets)){
   
   i = i+1
   
-  obs <- df_MAM[,2]
-  FFDAS <- df_MAM[,4]
-  df <- data.frame(obs, FFDAS)
-  df <- na.omit(df)
-  FFDAS <- dplyr::pull(df,2)
-  obs <- dplyr::pull(df, 1) #changing it to numeric
+  FFDAS <- df_Annual[,4]
+  FFDAS <- dplyr::pull(df_Annual,4)
   
   statsReady <- modeval(measured = obs,
                         calculated = FFDAS,
@@ -103,10 +80,8 @@ for(j in 1:length(sheets)){
   
   i = i+1
   
-  obs <- df_MAM[,2]
-  obs <- dplyr::pull(df_MAM, 2) #changing it to numeric
-  ODIAC <- df_MAM[,5]
-  ODIAC <- dplyr::pull(df_MAM,5)
+  ODIAC <- df_Annual[,5]
+  ODIAC <- dplyr::pull(df_Annual,5)
   
   statsReady <- modeval(measured = obs,
                         calculated = ODIAC,
@@ -127,12 +102,8 @@ for(j in 1:length(sheets)){
   
   i = i+1
   
-  obs <- df_MAM[,2]
-  VULCAN <- df_MAM[,6]
-  df <- data.frame(obs, VULCAN)
-  df <- na.omit(df)
-  VULCAN <- dplyr::pull(df,2)
-  obs <- dplyr::pull(df, 1) #changing it to numeric
+  VULCAN <- df_Annual[,6]
+  VULCAN <- dplyr::pull(df_Annual,6)
   
   statsReady <- modeval(measured = obs,
                         calculated = VULCAN,
@@ -156,6 +127,8 @@ for(j in 1:length(sheets)){
   print(sheets[j])
   
   finalDf <- rbind(finalDf,statDf)
+  
+  colnames(statDf) <- c('site','dataset','#obs','obs','sim','r','MB(ppm)','NMB(%)','MAE','NME(%)','RMSE(ppm)')
 
 }
 
@@ -169,24 +142,27 @@ finalDf$`NME(%)`<- as.numeric(finalDf$`NME(%)`)
 finalDf$MAE<- as.numeric(finalDf$MAE)
 finalDf$`RMSE(ppm)`<- as.numeric(finalDf$`RMSE(ppm)`)
 
-# Define the file path
-file_path <- "E:/Eeshan/evaluation/results/results_MAM.xlsx"
+# average_stats <- finalDf %>%
+#   group_by(dataset) %>%
+#   summarise(across(c("#obs", "obs", "sim", "r", "MB(ppm)", "NMB(%)", "MAE", "NME(%)", "RMSE(ppm)"), mean, na.rm = TRUE),
+#             .groups = "drop") %>%
+#   mutate(dataset = dataset)  # Keeping dataset names unchanged
+# 
+# # Initialize the 'site' column if it doesn't exist
+# if (!"site" %in% names(average_stats)) {
+#   average_stats$site <- "Average"  # Set a default value for initialization
+# }
+# 
+# # Move 'site' column to the first position
+# average_stats <- average_stats %>%
+#   select(site, everything())  # This moves 'site' to the first column
+# 
+# # Set the 'site' field of the first row to "Average"
+# average_stats$site[1] <- "Average"
+# 
+# # Appending the average_stats to finalDf if necessary
+# finalDf <- rbind(finalDf, average_stats)
 
-# Load the existing workbook or create a new one if it doesn't exist
-if (file.exists(file_path)) {
-  wb <- loadWorkbook(file_path)
-} else {
-  wb <- createWorkbook()
-}
-
-# Check if the sheet exists, and delete it if it does
-if ("Average" %in% getSheetNames(file_path)) {
-  removeWorksheet(wb, "Average")
-}
-
-# Add the sheet and write the data
-addWorksheet(wb, "Average")
-writeData(wb, "Average", finalDf)
-
-# Save the workbook
-saveWorkbook(wb, file_path, overwrite = TRUE)
+write.xlsx2(finalDf, file = "E:/Eeshan/evaluation/results/results_Annual_d01.xlsx", 
+            sheetName="2016", 
+            append=TRUE)
